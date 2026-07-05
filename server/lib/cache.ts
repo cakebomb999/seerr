@@ -11,7 +11,8 @@ export type AvailableCacheIds =
   | 'plextv'
   | 'plexwatchlist'
   | 'tvdb'
-  | 'anilist';
+  | 'anilist'
+  | 'mal';
 
 const DEFAULT_TTL = 300;
 const DEFAULT_CHECK_PERIOD = 120;
@@ -78,6 +79,10 @@ class CacheManager {
     }),
     anilist: new Cache('anilist', 'AniList API', {
       stdTtl: 86400,
+      checkPeriod: 60 * 30,
+    }),
+    mal: new Cache('mal', 'MyAnimeList API', {
+      stdTtl: 43200,
       checkPeriod: 60 * 30,
     }),
   };
