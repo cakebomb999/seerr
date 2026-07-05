@@ -15,7 +15,10 @@ import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { BarsArrowDownIcon, FunnelIcon } from '@heroicons/react/24/solid';
 import type { SortOptions as TMDBSortOptions } from '@server/api/themoviedb';
-import type { SeasonalAnimeResult } from '@server/interfaces/api/discoverInterfaces';
+import type {
+  SeasonalAnimeResult,
+  TopAnimeResult,
+} from '@server/interfaces/api/discoverInterfaces';
 import type { TvResult } from '@server/models/Search';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
@@ -34,6 +37,8 @@ const messages = defineMessages('components.Discover.DiscoverAnime', {
   sortTmdbRatingDesc: 'TMDB Rating Descending',
   sortTitleAsc: 'Title (A-Z) Ascending',
   sortTitleDesc: 'Title (Z-A) Descending',
+  sortMalRated: 'MAL Top Rated',
+  sortMalPopular: 'MAL Most Popular',
 });
 
 const SortOptions: Record<string, TMDBSortOptions> = {
@@ -45,6 +50,12 @@ const SortOptions: Record<string, TMDBSortOptions> = {
   TmdbRatingDesc: 'vote_average.desc',
   TitleAsc: 'original_title.asc',
   TitleDesc: 'original_title.desc',
+} as const;
+
+// MAL sorts are served by a separate curated ranking, not the TMDB discover.
+const MalSortValues = {
+  Rated: 'mal.rating',
+  Popular: 'mal.popularity',
 } as const;
 
 const AnimeList = ({ filters }: { filters: FilterOptions }) => {
@@ -107,6 +118,39 @@ const SeasonalAnimeList = () => {
   );
 };
 
+const MalTopList = ({ sort }: { sort: 'rating' | 'popularity' }) => {
+  const {
+    isLoadingInitialData,
+    isEmpty,
+    isLoadingMore,
+    isReachingEnd,
+    titles,
+    fetchMore,
+    error,
+    mutate,
+  } = useDiscover<TopAnimeResult, never, { sort: string }>(
+    '/api/v1/discover/anime/top',
+    { sort }
+  );
+
+  if (error) {
+    return <ErrorPage statusCode={500} />;
+  }
+
+  return (
+    <ListView
+      plexItems={titles}
+      isEmpty={isEmpty}
+      isReachingEnd={isReachingEnd}
+      isLoading={
+        isLoadingInitialData || (isLoadingMore && (titles?.length ?? 0) > 0)
+      }
+      onScrollBottom={fetchMore}
+      mutateParent={mutate}
+    />
+  );
+};
+
 const DiscoverAnime = () => {
   const intl = useIntl();
   const router = useRouter();
@@ -115,6 +159,12 @@ const DiscoverAnime = () => {
   const updateQueryParams = useUpdateQueryParams({});
 
   const seasonal = router.query.seasonal === 'true';
+  const malSort =
+    preparedFilters.sortBy === MalSortValues.Rated
+      ? 'rating'
+      : preparedFilters.sortBy === MalSortValues.Popular
+        ? 'popularity'
+        : null;
 
   const title = intl.formatMessage(messages.discoveranime);
 
@@ -148,6 +198,12 @@ const DiscoverAnime = () => {
                   value={preparedFilters.sortBy || SortOptions.PopularityDesc}
                   onChange={(e) => updateQueryParams('sortBy', e.target.value)}
                 >
+                  <option value={MalSortValues.Rated}>
+                    {intl.formatMessage(messages.sortMalRated)}
+                  </option>
+                  <option value={MalSortValues.Popular}>
+                    {intl.formatMessage(messages.sortMalPopular)}
+                  </option>
                   <option value={SortOptions.PopularityDesc}>
                     {intl.formatMessage(messages.sortPopularityDesc)}
                   </option>
@@ -174,28 +230,37 @@ const DiscoverAnime = () => {
                   </option>
                 </select>
               </div>
-              <FilterSlideover
-                type="tv"
-                currentFilters={preparedFilters}
-                onClose={() => setShowFilters(false)}
-                show={showFilters}
-              />
-              <div className="mb-2 flex flex-grow sm:mb-0 lg:flex-grow-0">
-                <Button onClick={() => setShowFilters(true)} className="w-full">
-                  <FunnelIcon />
-                  <span>
-                    {intl.formatMessage(messages.activefilters, {
-                      count: countActiveFilters(preparedFilters),
-                    })}
-                  </span>
-                </Button>
-              </div>
+              {!malSort && (
+                <>
+                  <FilterSlideover
+                    type="tv"
+                    currentFilters={preparedFilters}
+                    onClose={() => setShowFilters(false)}
+                    show={showFilters}
+                  />
+                  <div className="mb-2 flex flex-grow sm:mb-0 lg:flex-grow-0">
+                    <Button
+                      onClick={() => setShowFilters(true)}
+                      className="w-full"
+                    >
+                      <FunnelIcon />
+                      <span>
+                        {intl.formatMessage(messages.activefilters, {
+                          count: countActiveFilters(preparedFilters),
+                        })}
+                      </span>
+                    </Button>
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
       </div>
       {seasonal ? (
         <SeasonalAnimeList />
+      ) : malSort ? (
+        <MalTopList sort={malSort} />
       ) : (
         <AnimeList filters={preparedFilters} />
       )}

@@ -19,6 +19,23 @@ interface JikanAnimeResponse {
   };
 }
 
+interface JikanTopResponse {
+  pagination: {
+    has_next_page: boolean;
+  };
+  data: {
+    mal_id: number;
+    score: number | null;
+  }[];
+}
+
+export interface MalRankedEntry {
+  malId: number;
+  score: number;
+}
+
+export type MalTopFilter = 'bypopularity' | undefined;
+
 // Jikan is a community-run, unauthenticated MyAnimeList API.
 // https://docs.api.jikan.moe
 class MyAnimeList extends ExternalAPI {
@@ -29,7 +46,8 @@ class MyAnimeList extends ExternalAPI {
       {
         nodeCache: cacheManager.getCache('mal').data,
         rateLimit: {
-          maxRPS: 2,
+          // Jikan is community-run; stay well under its limits.
+          maxRPS: 1,
           maxRequests: 1,
         },
       }
@@ -62,6 +80,52 @@ class MyAnimeList extends ExternalAPI {
       });
       return null;
     }
+  }
+
+  // Fetches the MAL top TV anime ranking, in order, across up to `pages` pages
+  // (25 entries each). No filter ranks by score; 'bypopularity' by members.
+  public async getTopAnime(
+    pages: number,
+    filter?: MalTopFilter
+  ): Promise<MalRankedEntry[]> {
+    const ranking: MalRankedEntry[] = [];
+
+    for (let page = 1; page <= pages; page++) {
+      try {
+        const response = await this.get<JikanTopResponse>(
+          '/top/anime',
+          {
+            params: {
+              type: 'tv',
+              page,
+              limit: 25,
+              ...(filter ? { filter } : {}),
+            },
+          },
+          43200
+        );
+
+        for (const entry of response.data) {
+          if (entry.score) {
+            ranking.push({ malId: entry.mal_id, score: entry.score });
+          }
+        }
+
+        if (!response.pagination.has_next_page) {
+          break;
+        }
+      } catch (e) {
+        // On a transient failure (e.g. rate limit) keep the pages we have.
+        logger.debug('Stopped fetching MyAnimeList top anime early', {
+          label: 'MyAnimeList',
+          errorMessage: e.message,
+          page,
+        });
+        break;
+      }
+    }
+
+    return ranking;
   }
 }
 

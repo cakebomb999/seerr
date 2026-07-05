@@ -52,6 +52,8 @@
   "components.Discover.DiscoverAnime.seasonal": "Seasonal",
   "components.Discover.DiscoverAnime.sortFirstAirDateAsc": "First Air Date Ascending",
   "components.Discover.DiscoverAnime.sortFirstAirDateDesc": "First Air Date Descending",
+  "components.Discover.DiscoverAnime.sortMalPopular": "MAL Most Popular",
+  "components.Discover.DiscoverAnime.sortMalRated": "MAL Top Rated",
   "components.Discover.DiscoverAnime.sortPopularityAsc": "Popularity Ascending",
   "components.Discover.DiscoverAnime.sortPopularityDesc": "Popularity Descending",
   "components.Discover.DiscoverAnime.sortTitleAsc": "Title (A-Z) Ascending",

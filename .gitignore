@@ -51,6 +51,9 @@ config/logs/*-audit.json
 # anidb mapping file
 config/anime-list.xml
 
+# myanimelist top anime cache
+config/mal-top-anime.json
+
 # dist files
 dist
 

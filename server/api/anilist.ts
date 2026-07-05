@@ -1,4 +1,5 @@
 import ExternalAPI from '@server/api/externalapi';
+import type { MalRankedEntry } from '@server/api/rating/myanimelist';
 import TheMovieDb from '@server/api/themoviedb';
 import cacheManager from '@server/lib/cache';
 import logger from '@server/logger';
@@ -273,6 +274,7 @@ let mappingCache: {
   expiresAt: number;
   anilistToTmdb: Map<number, AniListTmdbMapping>;
   tmdbToMal: Map<number, number>;
+  malToTmdb: Map<number, number>;
 } | null = null;
 
 const loadFribbMappings = async () => {
@@ -285,6 +287,7 @@ const loadFribbMappings = async () => {
   });
 
   const anilistToTmdb = new Map<number, AniListTmdbMapping>();
+  const malToTmdb = new Map<number, number>();
   const malCandidates = new Map<number, FribbMalEntry[]>();
 
   for (const entry of response.data) {
@@ -295,6 +298,8 @@ const loadFribbMappings = async () => {
     }
 
     if (resolved && entry.mal_id) {
+      malToTmdb.set(entry.mal_id, resolved.tmdbId);
+
       const candidates = malCandidates.get(resolved.tmdbId) ?? [];
       candidates.push({
         malId: entry.mal_id,
@@ -322,6 +327,7 @@ const loadFribbMappings = async () => {
     expiresAt: Date.now() + CACHE_TTL_SECONDS * 1000,
     anilistToTmdb,
     tmdbToMal,
+    malToTmdb,
   };
 
   return mappingCache;
@@ -338,6 +344,37 @@ export const getMalIdFromTmdb = async (
 ): Promise<number | null> => {
   const { tmdbToMal } = await loadFribbMappings();
   return tmdbToMal.get(tmdbId) ?? null;
+};
+
+export interface RankedTmdbAnime {
+  tmdbId: number;
+  malScore: number;
+}
+
+// Turns a MAL-ordered ranking into a TMDB-ordered list. Each MAL entry is a
+// season; multiple resolve to one TMDB show, so keep the first (highest-ranked)
+// occurrence per show. Entries without a TMDB mapping are dropped.
+export const resolveMalRankingToTmdb = (
+  ranking: MalRankedEntry[],
+  malToTmdb: Map<number, number>
+): RankedTmdbAnime[] => {
+  const seen = new Set<number>();
+  const resolved: RankedTmdbAnime[] = [];
+
+  for (const entry of ranking) {
+    const tmdbId = malToTmdb.get(entry.malId);
+    if (!tmdbId || seen.has(tmdbId)) {
+      continue;
+    }
+    seen.add(tmdbId);
+    resolved.push({ tmdbId, malScore: entry.score });
+  }
+
+  return resolved;
+};
+
+export const getMalToTmdbMap = async (): Promise<Map<number, number>> => {
+  return (await loadFribbMappings()).malToTmdb;
 };
 
 const searchTmdbFallback = async (

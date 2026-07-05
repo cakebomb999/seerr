@@ -12,6 +12,7 @@ export interface TmdbTitleCardProps {
   type: 'movie' | 'tv';
   canExpand?: boolean;
   isAddedToWatchlist?: boolean;
+  malScore?: number;
   mutateParent?: () => void;
 }
 
@@ -26,6 +27,7 @@ const TmdbTitleCard = ({
   type,
   canExpand,
   isAddedToWatchlist = false,
+  malScore,
   mutateParent,
 }: TmdbTitleCardProps) => {
   const { hasPermission } = useUser();
@@ -90,6 +92,7 @@ const TmdbTitleCard = ({
       year={title.firstAirDate}
       mediaType={'tv'}
       canExpand={canExpand}
+      malScore={malScore}
       mutateParent={mutateParent}
     />
   );

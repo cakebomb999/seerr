@@ -42,6 +42,7 @@ interface TitleCardProps {
   canExpand?: boolean;
   inProgress?: boolean;
   isAddedToWatchlist?: number | boolean;
+  malScore?: number;
   mutateParent?: () => void;
 }
 
@@ -66,6 +67,7 @@ const TitleCard = ({
   isAddedToWatchlist = false,
   inProgress = false,
   canExpand = false,
+  malScore,
   mutateParent,
 }: TitleCardProps) => {
   const isTouch = useIsTouch();
@@ -386,20 +388,29 @@ const TitleCard = ({
             fill
           />
           <div className="absolute left-0 right-0 flex items-center justify-between p-2">
-            <div
-              className={`pointer-events-none z-40 self-start rounded-full border shadow-md ${
-                mediaType === 'movie' || mediaType === 'collection'
-                  ? 'border-blue-500 bg-blue-600/80'
-                  : 'border-purple-600 bg-purple-600/80'
-              }`}
-            >
-              <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium uppercase tracking-wider text-white sm:h-5">
-                {mediaType === 'movie'
-                  ? intl.formatMessage(globalMessages.movie)
-                  : mediaType === 'collection'
-                    ? intl.formatMessage(globalMessages.collection)
-                    : intl.formatMessage(globalMessages.tvshow)}
+            <div className="flex items-center gap-2 self-start">
+              <div
+                className={`pointer-events-none z-40 rounded-full border shadow-md ${
+                  mediaType === 'movie' || mediaType === 'collection'
+                    ? 'border-blue-500 bg-blue-600/80'
+                    : 'border-purple-600 bg-purple-600/80'
+                }`}
+              >
+                <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium uppercase tracking-wider text-white sm:h-5">
+                  {mediaType === 'movie'
+                    ? intl.formatMessage(globalMessages.movie)
+                    : mediaType === 'collection'
+                      ? intl.formatMessage(globalMessages.collection)
+                      : intl.formatMessage(globalMessages.tvshow)}
+                </div>
               </div>
+              {!!malScore && (
+                <div className="pointer-events-none z-40 rounded-full border border-indigo-400 bg-indigo-500/80 shadow-md">
+                  <div className="flex h-4 items-center px-2 py-2 text-center text-xs font-medium text-white sm:h-5">
+                    ★ {malScore}
+                  </div>
+                </div>
+              )}
             </div>
             {showDetail && currentStatus !== MediaStatus.BLOCKLISTED && (
               <div className="flex flex-col gap-1">

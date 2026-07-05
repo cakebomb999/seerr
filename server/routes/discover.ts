@@ -12,8 +12,10 @@ import { Watchlist } from '@server/entity/Watchlist';
 import type {
   GenreSliderItem,
   SeasonalAnimeResponse,
+  TopAnimeResponse,
   WatchlistResponse,
 } from '@server/interfaces/api/discoverInterfaces';
+import { getMalTopAnime } from '@server/lib/malTopAnime';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { mapProductionCompany } from '@server/models/Movie';
@@ -1041,6 +1043,42 @@ discoverRoutes.get<Record<string, unknown>, SeasonalAnimeResponse>(
       return next({
         status: 500,
         message: 'Unable to retrieve seasonal anime.',
+      });
+    }
+  }
+);
+
+discoverRoutes.get<Record<string, unknown>, TopAnimeResponse>(
+  '/anime/top',
+  async (req, res, next) => {
+    const itemsPerPage = 20;
+    const page = req.query.page ? Number(req.query.page) : 1;
+    const offset = (page - 1) * itemsPerPage;
+    const sort = req.query.sort === 'popularity' ? 'popularity' : 'rating';
+
+    try {
+      const items = await getMalTopAnime(sort);
+
+      return res.status(200).json({
+        page,
+        totalPages: Math.ceil(items.length / itemsPerPage),
+        totalResults: items.length,
+        results: items.slice(offset, offset + itemsPerPage).map((item) => ({
+          id: item.tmdbId,
+          ratingKey: `mal-${item.tmdbId}`,
+          tmdbId: item.tmdbId,
+          mediaType: 'tv' as const,
+          malScore: item.malScore,
+        })),
+      });
+    } catch (e) {
+      logger.debug('Something went wrong retrieving top anime', {
+        label: 'API',
+        errorMessage: e.message,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to retrieve top anime.',
       });
     }
   }

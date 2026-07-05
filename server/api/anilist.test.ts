@@ -6,6 +6,7 @@ import {
   getCurrentAnimeSeason,
   pickCanonicalMalId,
   pickTvSearchResult,
+  resolveMalRankingToTmdb,
 } from '@server/api/anilist';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -219,6 +220,57 @@ describe('pickCanonicalMalId', () => {
 
   it('returns null for no entries', () => {
     assert.equal(pickCanonicalMalId([]), null);
+  });
+});
+
+describe('resolveMalRankingToTmdb', () => {
+  const malToTmdb = new Map<number, number>([
+    [16498, 1429], // AoT S1
+    [25777, 1429], // AoT S2 -> same show
+    [52991, 209867], // Frieren
+    [999999, 5], // maps, unique
+  ]);
+
+  it('maps mal ids to tmdb, preserving ranking order', () => {
+    assert.deepEqual(
+      resolveMalRankingToTmdb(
+        [
+          { malId: 52991, score: 9.3 },
+          { malId: 16498, score: 8.6 },
+        ],
+        malToTmdb
+      ),
+      [
+        { tmdbId: 209867, malScore: 9.3 },
+        { tmdbId: 1429, malScore: 8.6 },
+      ]
+    );
+  });
+
+  it('keeps the first (highest-ranked) entry per tmdb show', () => {
+    assert.deepEqual(
+      resolveMalRankingToTmdb(
+        [
+          { malId: 25777, score: 9.0 }, // AoT S2 first
+          { malId: 16498, score: 8.6 }, // AoT S1 later -> dropped
+        ],
+        malToTmdb
+      ),
+      [{ tmdbId: 1429, malScore: 9.0 }]
+    );
+  });
+
+  it('drops entries without a tmdb mapping', () => {
+    assert.deepEqual(
+      resolveMalRankingToTmdb(
+        [
+          { malId: 111111, score: 9.0 },
+          { malId: 52991, score: 8.8 },
+        ],
+        malToTmdb
+      ),
+      [{ tmdbId: 209867, malScore: 8.8 }]
+    );
   });
 });
 

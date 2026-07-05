@@ -33,3 +33,18 @@ export interface SeasonalAnimeResponse {
   totalResults: number;
   results: SeasonalAnimeResult[];
 }
+
+export interface TopAnimeResult {
+  id: number;
+  ratingKey: string;
+  tmdbId: number;
+  mediaType: 'tv';
+  malScore: number;
+}
+
+export interface TopAnimeResponse {
+  page: number;
+  totalPages: number;
+  totalResults: number;
+  results: TopAnimeResult[];
+}

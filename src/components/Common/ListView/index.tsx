@@ -5,7 +5,10 @@ import { Permission, useUser } from '@app/hooks/useUser';
 import useVerticalScroll from '@app/hooks/useVerticalScroll';
 import globalMessages from '@app/i18n/globalMessages';
 import { MediaStatus } from '@server/constants/media';
-import type { WatchlistItem } from '@server/interfaces/api/discoverInterfaces';
+import type {
+  TopAnimeResult,
+  WatchlistItem,
+} from '@server/interfaces/api/discoverInterfaces';
 import type {
   CollectionResult,
   MovieResult,
@@ -16,7 +19,7 @@ import { useIntl } from 'react-intl';
 
 type ListViewProps = {
   items?: (TvResult | MovieResult | PersonResult | CollectionResult)[];
-  plexItems?: WatchlistItem[];
+  plexItems?: (WatchlistItem | TopAnimeResult)[];
   isEmpty?: boolean;
   isLoading?: boolean;
   isReachingEnd?: boolean;
@@ -59,6 +62,7 @@ const ListView = ({
                 type={title.mediaType}
                 isAddedToWatchlist={true}
                 canExpand
+                malScore={'malScore' in title ? title.malScore : undefined}
                 mutateParent={mutateParent}
               />
             </li>

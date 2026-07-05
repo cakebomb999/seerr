@@ -6494,6 +6494,58 @@ paths:
                           example: tv
                         title:
                           type: string
+  /discover/anime/top:
+    get:
+      summary: Get top-ranked anime from MyAnimeList.
+      description: Returns the MyAnimeList top TV anime ranking resolved to TMDB series. Ranked by MAL score, or by popularity when sort=popularity. Backed by a locally cached list refreshed daily.
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [rating, popularity]
+            default: rating
+      responses:
+        '200':
+          description: Top anime data returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                  totalPages:
+                    type: number
+                  totalResults:
+                    type: number
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                          example: 209867
+                        tmdbId:
+                          type: number
+                          example: 209867
+                        ratingKey:
+                          type: string
+                        mediaType:
+                          type: string
+                          example: tv
+                        malScore:
+                          type: number
+                          example: 9.26
   /request:
     get:
       summary: Get all requests
