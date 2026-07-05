@@ -174,17 +174,6 @@ const DiscoverAnime = () => {
       <div className="mb-4 flex flex-col justify-between lg:flex-row lg:items-end">
         <Header>{title}</Header>
         <div className="mt-2 flex flex-grow flex-col sm:flex-row sm:items-center lg:flex-grow-0">
-          <div className="mb-2 flex items-center sm:mb-0 sm:mr-4">
-            <span className="mr-2 text-sm text-gray-100">
-              {intl.formatMessage(messages.seasonal)}
-            </span>
-            <SlideCheckbox
-              checked={seasonal}
-              onClick={() =>
-                updateQueryParams('seasonal', seasonal ? undefined : 'true')
-              }
-            />
-          </div>
           {!seasonal && (
             <>
               <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
@@ -255,6 +244,17 @@ const DiscoverAnime = () => {
               )}
             </>
           )}
+          <div className="mb-2 flex items-center sm:mb-0 sm:ml-4">
+            <span className="mr-2 text-sm text-gray-100">
+              {intl.formatMessage(messages.seasonal)}
+            </span>
+            <SlideCheckbox
+              checked={seasonal}
+              onClick={() =>
+                updateQueryParams('seasonal', seasonal ? undefined : 'true')
+              }
+            />
+          </div>
         </div>
       </div>
       {seasonal ? (
