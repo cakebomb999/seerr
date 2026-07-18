@@ -48,6 +48,13 @@ const build = async (): Promise<MalTopCache> => {
     byPopularity: resolveMalRankingToTmdb(popularityRanking, malToTmdb),
   };
 
+  // A build that resolved nothing (e.g. Jikan returned an empty or errored
+  // response) must not overwrite a previously good list. Throwing here lets
+  // getCache fall back to the stale on-disk cache.
+  if (cache.byRating.length === 0 && cache.byPopularity.length === 0) {
+    throw new Error('MyAnimeList returned no top anime');
+  }
+
   try {
     await fsp.writeFile(LOCAL_PATH, JSON.stringify(cache));
   } catch (e) {

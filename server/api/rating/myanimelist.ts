@@ -25,7 +25,9 @@ interface JikanTopResponse {
   };
   data: {
     mal_id: number;
+    type: string | null;
     score: number | null;
+    members: number | null;
   }[];
 }
 
@@ -84,11 +86,17 @@ class MyAnimeList extends ExternalAPI {
 
   // Fetches the MAL top TV anime ranking, in order, across up to `pages` pages
   // (25 entries each). No filter ranks by score; 'bypopularity' by members.
+  //
+  // The `type` and `filter` query parameters are intentionally not sent to
+  // Jikan: those variants bypass its cache and currently fail with a 504 when
+  // MyAnimeList is unreachable. Instead we fetch the unfiltered ranking (served
+  // from cache) and narrow it to TV entries, re-sorting by members when the
+  // popularity ranking is requested.
   public async getTopAnime(
     pages: number,
     filter?: MalTopFilter
   ): Promise<MalRankedEntry[]> {
-    const ranking: MalRankedEntry[] = [];
+    const entries: { malId: number; score: number; members: number }[] = [];
 
     for (let page = 1; page <= pages; page++) {
       try {
@@ -96,18 +104,20 @@ class MyAnimeList extends ExternalAPI {
           '/top/anime',
           {
             params: {
-              type: 'tv',
               page,
               limit: 25,
-              ...(filter ? { filter } : {}),
             },
           },
           43200
         );
 
         for (const entry of response.data) {
-          if (entry.score) {
-            ranking.push({ malId: entry.mal_id, score: entry.score });
+          if (entry.type === 'TV' && entry.score) {
+            entries.push({
+              malId: entry.mal_id,
+              score: entry.score,
+              members: entry.members ?? 0,
+            });
           }
         }
 
@@ -125,7 +135,11 @@ class MyAnimeList extends ExternalAPI {
       }
     }
 
-    return ranking;
+    if (filter === 'bypopularity') {
+      entries.sort((a, b) => b.members - a.members);
+    }
+
+    return entries.map(({ malId, score }) => ({ malId, score }));
   }
 }
 
