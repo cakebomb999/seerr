@@ -13,6 +13,8 @@ const DEFAULT_ROLLING_BUFFER = 10000;
 export interface ExternalAPIOptions {
   nodeCache?: NodeCache;
   headers?: Record<string, unknown>;
+  httpAgent?: AxiosRequestConfig['httpAgent'];
+  httpsAgent?: AxiosRequestConfig['httpsAgent'];
   timeout?: number;
   rateLimit?: {
     maxRPS: number;
@@ -34,6 +36,8 @@ class ExternalAPI {
       baseURL: baseUrl,
       params,
       timeout: options.timeout,
+      httpAgent: options.httpAgent,
+      httpsAgent: options.httpsAgent,
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',

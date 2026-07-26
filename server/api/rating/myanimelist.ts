@@ -1,6 +1,8 @@
 import ExternalAPI from '@server/api/externalapi';
 import cacheManager from '@server/lib/cache';
 import logger from '@server/logger';
+import { Agent as HttpAgent } from 'http';
+import { Agent as HttpsAgent } from 'https';
 
 export interface MalRating {
   title: string;
@@ -40,12 +42,27 @@ export type MalTopFilter = 'bypopularity' | undefined;
 
 // Jikan is a community-run, unauthenticated MyAnimeList API.
 // https://docs.api.jikan.moe
+//
+// While MyAnimeList is flaky upstream, Jikan responds with a 504 for many
+// requests. Two workarounds noticeably raise the success rate:
+//   1. Sending this exact Accept-Encoding value (order and members matter) hits
+//      Jikan's cache instead of forcing an upstream fetch.
+//   2. Forcing HTTP/1.1 avoids failures for requests that would otherwise be
+//      negotiated over HTTP/2, which Jikan does not support.
+// Jikan still replies with gzip, which Node decompresses transparently.
+const JIKAN_ACCEPT_ENCODING = 'gzip, deflate, br, zstd';
+
 class MyAnimeList extends ExternalAPI {
   constructor() {
     super(
       'https://api.jikan.moe/v4',
       {},
       {
+        headers: {
+          'Accept-Encoding': JIKAN_ACCEPT_ENCODING,
+        },
+        httpAgent: new HttpAgent({ keepAlive: true }),
+        httpsAgent: new HttpsAgent({ keepAlive: true }),
         nodeCache: cacheManager.getCache('mal').data,
         rateLimit: {
           // Jikan is community-run; stay well under its limits.
