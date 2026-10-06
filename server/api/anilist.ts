@@ -62,7 +62,7 @@ query ($season: MediaSeason, $year: Int, $page: Int) {
   Page(page: $page, perPage: 50) {
     pageInfo { hasNextPage }
     media(season: $season, seasonYear: $year, type: ANIME,
-          format_in: [TV, TV_SHORT], sort: POPULARITY_DESC) {
+          format_in: [TV, TV_SHORT, ONA], sort: POPULARITY_DESC) {
       id
       idMal
       title { romaji english }
