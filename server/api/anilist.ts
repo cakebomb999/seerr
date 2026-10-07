@@ -356,8 +356,10 @@ const searchTmdbFallback = async (
   return null;
 };
 
-export const getSeasonalAnimeList = async (): Promise<SeasonalAnimeItem[]> => {
-  const { season, year } = getCurrentAnimeSeason();
+const resolveSeasonalAnimeList = async (
+  season: AnimeSeason,
+  year: number
+): Promise<SeasonalAnimeItem[]> => {
   const cache = cacheManager.getCache('anilist').data;
   const cacheKey = `seasonal-resolved-${season}-${year}`;
 
@@ -419,6 +421,25 @@ export const getSeasonalAnimeList = async (): Promise<SeasonalAnimeItem[]> => {
   cache.set(cacheKey, items, CACHE_TTL_SECONDS);
 
   return items;
+};
+
+// Concurrent cold-cache callers share one resolution instead of each hitting
+// AniList, Fribb and TMDB. Keyed by season so a rollover never returns stale data.
+const seasonalInFlight = new Map<string, Promise<SeasonalAnimeItem[]>>();
+
+export const getSeasonalAnimeList = (): Promise<SeasonalAnimeItem[]> => {
+  const { season, year } = getCurrentAnimeSeason();
+  const key = `${season}-${year}`;
+
+  let pending = seasonalInFlight.get(key);
+  if (!pending) {
+    pending = resolveSeasonalAnimeList(season, year).finally(() =>
+      seasonalInFlight.delete(key)
+    );
+    seasonalInFlight.set(key, pending);
+  }
+
+  return pending;
 };
 
 export default AniListAPI;
