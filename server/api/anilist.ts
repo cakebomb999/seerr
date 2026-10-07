@@ -11,6 +11,7 @@ const FRIBB_MAPPING_URL =
   'https://raw.githubusercontent.com/Fribb/anime-lists/master/anime-list-mini.json';
 
 const CACHE_TTL_SECONDS = 86400; // AniList is heavily rate limited; refresh daily
+const DEGRADED_CACHE_TTL_SECONDS = 600; // retry failed lookups sooner, without hammering
 const MAX_SEASONAL_PAGES = 3; // 3 x 50 covers a full simulcast season
 const TMDB_ANIMATION_GENRE_ID = 16;
 
@@ -371,10 +372,14 @@ const resolveSeasonalAnimeList = async (
   const anilist = new AniListAPI();
   const tmdb = new TheMovieDb();
 
+  // Set when a dependency failed, so the partial list is only cached briefly
+  let degraded = false;
+
   const [seasonal, mapping] = await Promise.all([
     anilist.getSeasonalAnime(season, year),
     // Mapping outage must not fail the season; the title search covers it
     getAniListTmdbMap().catch((e) => {
+      degraded = true;
       logger.debug('Failed to load Fribb mappings', {
         label: 'AniList',
         errorMessage: e.message,
@@ -398,6 +403,7 @@ const resolveSeasonalAnimeList = async (
           return { anilistId: media.id, tmdbId, title };
         }
       } catch (e) {
+        degraded = true;
         logger.debug('TMDB fallback search failed for seasonal anime', {
           label: 'AniList',
           errorMessage: e.message,
@@ -418,7 +424,11 @@ const resolveSeasonalAnimeList = async (
     resolved.filter((item): item is SeasonalAnimeItem => item !== null)
   );
 
-  cache.set(cacheKey, items, CACHE_TTL_SECONDS);
+  cache.set(
+    cacheKey,
+    items,
+    degraded ? DEGRADED_CACHE_TTL_SECONDS : CACHE_TTL_SECONDS
+  );
 
   return items;
 };
