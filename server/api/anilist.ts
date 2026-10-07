@@ -371,7 +371,14 @@ export const getSeasonalAnimeList = async (): Promise<SeasonalAnimeItem[]> => {
 
   const [seasonal, mapping] = await Promise.all([
     anilist.getSeasonalAnime(season, year),
-    getAniListTmdbMap(),
+    // Mapping outage must not fail the season; the title search covers it
+    getAniListTmdbMap().catch((e) => {
+      logger.debug('Failed to load Fribb mappings', {
+        label: 'AniList',
+        errorMessage: e.message,
+      });
+      return new Map<number, AniListTmdbMapping>();
+    }),
   ]);
 
   const resolved = await Promise.all(

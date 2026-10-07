@@ -96,6 +96,7 @@ const SeasonalAnimeList = () => {
   return (
     <ListView
       plexItems={titles}
+      plexItemsAreAddedToWatchlist={false}
       isEmpty={isEmpty}
       isReachingEnd={isReachingEnd}
       isLoading={

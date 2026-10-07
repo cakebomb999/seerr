@@ -550,7 +550,8 @@ discoverRoutes.get('/anime', async (req, res, next) => {
       data.results.map((result) => ({
         tmdbId: result.id,
         mediaType: MediaType.TV,
-      }))
+      })),
+      { includeActiveRequest: true }
     );
 
     let keywordData: TmdbKeyword[] = [];

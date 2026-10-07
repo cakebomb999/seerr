@@ -95,18 +95,18 @@ const MobileMenu = ({
       activeRegExp: /^\/discover\/tv$/,
     },
     {
-      href: '/discover/anime',
-      content: intl.formatMessage(menuMessages.browseanime),
-      svgIcon: <FireIcon className="h-6 w-6" />,
-      svgIconSelected: <FilledFireIcon className="h-6 w-6" />,
-      activeRegExp: /^\/discover\/anime$/,
-    },
-    {
       href: '/requests',
       content: intl.formatMessage(menuMessages.requests),
       svgIcon: <ClockIcon className="h-6 w-6" />,
       svgIconSelected: <FilledClockIcon className="h-6 w-6" />,
       activeRegExp: /^\/requests/,
+    },
+    {
+      href: '/discover/anime',
+      content: intl.formatMessage(menuMessages.browseanime),
+      svgIcon: <FireIcon className="h-6 w-6" />,
+      svgIconSelected: <FilledFireIcon className="h-6 w-6" />,
+      activeRegExp: /^\/discover\/anime$/,
     },
     {
       href: '/blocklist',
